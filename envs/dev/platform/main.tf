@@ -7,7 +7,7 @@ terraform {
   backend "s3" {
     bucket       = "tfstate-elyse-gitops"
     key          = "dev/platform/terraform.tfstate"
-    region       = "eu-west-3"
+    region       = "us-east-1"
     encrypt      = true
     use_lockfile = true
   }
@@ -19,7 +19,7 @@ variable "activer_metriques" {
   default     = false
 }
 
-provider "aws" { region = "eu-west-3" }
+provider "aws" { region = "us-east-1" }
 
 data "aws_eks_cluster" "this" { name = "gitops-dev" }
 
@@ -30,7 +30,7 @@ provider "helm" {
     exec {
       api_version = "client.authentication.k8s.io/v1beta1"
       command     = "aws"
-      args        = ["eks", "get-token", "--cluster-name", "gitops-dev", "--region", "eu-west-3"]
+      args        = ["eks", "get-token", "--cluster-name", "gitops-dev", "--region", "us-east-1"]
     }
   }
 }

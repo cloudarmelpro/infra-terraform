@@ -3,7 +3,7 @@ terraform {
   backend "s3" {
     bucket       = "tfstate-elyse-gitops"
     key          = "socle/terraform.tfstate"
-    region       = "eu-west-3"
+    region       = "us-east-1"
     encrypt      = true
     use_lockfile = true
   }

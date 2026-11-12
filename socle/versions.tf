@@ -6,7 +6,7 @@ terraform {
 }
 
 provider "aws" {
-  region = "eu-west-3"
+  region = "us-east-1"
   default_tags {
     tags = { Project = "gitops-eks", Layer = "socle", ManagedBy = "terraform" }
   }

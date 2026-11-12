@@ -69,9 +69,9 @@ resource "terraform_data" "taille_noeuds" {
   provisioner "local-exec" {
     command = <<-EOT
       NG=$(echo "${module.eks.eks_managed_node_groups["default"].node_group_id}" | cut -d: -f2)
-      ACTUEL=$(aws eks describe-nodegroup --cluster-name ${module.eks.cluster_name} --nodegroup-name "$NG" --region eu-west-3 --query nodegroup.scalingConfig.desiredSize --output text)
+      ACTUEL=$(aws eks describe-nodegroup --cluster-name ${module.eks.cluster_name} --nodegroup-name "$NG" --region us-east-1 --query nodegroup.scalingConfig.desiredSize --output text)
       if [ "$ACTUEL" != "${local.noeuds}" ]; then
-        aws eks update-nodegroup-config --cluster-name ${module.eks.cluster_name} --nodegroup-name "$NG" --region eu-west-3 --scaling-config desiredSize=${local.noeuds}
+        aws eks update-nodegroup-config --cluster-name ${module.eks.cluster_name} --nodegroup-name "$NG" --region us-east-1 --scaling-config desiredSize=${local.noeuds}
       fi
     EOT
   }

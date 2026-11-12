@@ -22,7 +22,7 @@ jobs:
       - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           role-to-assume: ${{ vars.AWS_APPLY_ROLE_ARN }}
-          aws-region: eu-west-3
+          aws-region: us-east-1
           role-duration-seconds: 7200
       - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
         with:
@@ -44,7 +44,7 @@ jobs:
       - name: Supprimer le NLB (ArgoCD arrêté pour qu'il ne le recrée pas)
         if: steps.env.outputs.actif == 'true'
         run: |
-          aws eks update-kubeconfig --name gitops-dev --region eu-west-3
+          aws eks update-kubeconfig --name gitops-dev --region us-east-1
           kubectl -n argocd scale statefulset argocd-application-controller --replicas=0 || true
           kubectl -n traefik delete svc traefik --ignore-not-found --wait=true --timeout=300s
           for i in $(seq 1 40); do
