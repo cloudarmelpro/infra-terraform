@@ -84,8 +84,8 @@ resource "helm_release" "argocd" {
 
 # =====================================================================================
 # Pont GitOps (modèle « GitOps Bridge ») : Terraform transmet à ArgoCD tout ce qui dépend
-# du compte AWS, puis ArgoCD installe la plateforme depuis gitops-config. Aucune valeur
-# propre au compte (numéro, région, VPC, IP fixes) n'est écrite dans gitops-config.
+# du compte AWS, puis ArgoCD installe la plateforme depuis uaa-platform-gitops. Aucune valeur
+# propre au compte (numéro, région, VPC, IP fixes) n'est écrite dans uaa-platform-gitops.
 # =====================================================================================
 
 variable "composants" {
@@ -119,7 +119,7 @@ locals {
 }
 
 # Le cluster tel qu'ArgoCD le voit : ses labels activent les composants, ses annotations
-# portent les valeurs lues par les ApplicationSet de gitops-config (bootstrap/apps).
+# portent les valeurs lues par les ApplicationSet de uaa-platform-gitops (bootstrap/apps).
 resource "kubernetes_secret" "cluster" {
   metadata {
     name      = "in-cluster"
@@ -155,7 +155,7 @@ resource "kubernetes_config_map" "parametres" {
   data = { registre_ecr = local.registre_ecr }
 }
 
-# Application racine : ArgoCD prend ensuite le relais et installe tout depuis gitops-config
+# Application racine : ArgoCD prend ensuite le relais et installe tout depuis uaa-platform-gitops
 resource "helm_release" "racine" {
   name       = "racine"
   repository = "https://argoproj.github.io/argo-helm"
@@ -169,7 +169,7 @@ resource "helm_release" "racine" {
         namespace = "argocd"
         project   = "default"
         source = {
-          repoURL        = "https://github.com/cloudarmelpro/gitops-config.git"
+          repoURL        = "https://github.com/cloudarmelpro/uaa-platform-gitops.git"
           targetRevision = "main"
           path           = "bootstrap/apps"
         }

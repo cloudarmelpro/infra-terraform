@@ -3,7 +3,7 @@ module "eks" {
   version = "~> 20.0"
 
   cluster_name    = local.name
-  cluster_version = "1.33" # vérifier qu'elle est en « standard support » dans la console EKS
+  cluster_version = "1.37" # en « standard support » jusqu'en décembre 2027 (1.33 : support étendu, 6 fois plus cher)
 
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets

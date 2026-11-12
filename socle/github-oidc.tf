@@ -3,7 +3,7 @@ resource "aws_iam_openid_connect_provider" "github" {
   client_id_list = ["sts.amazonaws.com"]
 }
 
-# ---- Rôle 1 : la CI de app-demo peut envoyer des images dans ECR, rien d'autre ----
+# ---- Rôle 1 : la CI de uaa-portal-api peut envoyer des images dans ECR, rien d'autre ----
 data "aws_iam_policy_document" "ci_trust" {
   statement {
     actions = ["sts:AssumeRoleWithWebIdentity"]
@@ -21,15 +21,15 @@ data "aws_iam_policy_document" "ci_trust" {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
       values = [
-        "repo:cloudarmelpro/app-demo:ref:refs/heads/main",
-        "repo:cloudarmelpro@*/app-demo@*:ref:refs/heads/main",
+        "repo:cloudarmelpro/uaa-portal-api:ref:refs/heads/main",
+        "repo:cloudarmelpro@*/uaa-portal-api@*:ref:refs/heads/main",
       ]
     }
   }
 }
 
 resource "aws_iam_role" "github_ci" {
-  name               = "github-ci-app-demo"
+  name               = "github-ci-portal-api"
   assume_role_policy = data.aws_iam_policy_document.ci_trust.json
 }
 
@@ -52,7 +52,7 @@ resource "aws_iam_role_policy" "github_ci_ecr" {
   policy = data.aws_iam_policy_document.ecr_push.json
 }
 
-# ---- Rôle 2 : infra-terraform peut LIRE le compte (plan, Conftest, détection des écarts) ----
+# ---- Rôle 2 : uaa-platform-infra peut LIRE le compte (plan, Conftest, détection des écarts) ----
 data "aws_iam_policy_document" "readonly_trust" {
   statement {
     actions = ["sts:AssumeRoleWithWebIdentity"]
@@ -69,8 +69,8 @@ data "aws_iam_policy_document" "readonly_trust" {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
       values = [
-        "repo:cloudarmelpro/infra-terraform:*",
-        "repo:cloudarmelpro@*/infra-terraform@*:*",
+        "repo:cloudarmelpro/uaa-platform-infra:*",
+        "repo:cloudarmelpro@*/uaa-platform-infra@*:*",
       ]
     }
   }
@@ -86,7 +86,7 @@ resource "aws_iam_role_policy_attachment" "github_readonly" {
   policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
 }
 
-# ---- Rôle 3 : infra-terraform peut APPLIQUER, uniquement depuis l'environnement GitHub « infra » ----
+# ---- Rôle 3 : uaa-platform-infra peut APPLIQUER, uniquement depuis l'environnement GitHub « infra » ----
 # Cet environnement exige une approbation humaine : aucun job ne reçoit ces droits sans validation.
 data "aws_iam_policy_document" "apply_trust" {
   statement {
@@ -104,8 +104,8 @@ data "aws_iam_policy_document" "apply_trust" {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
       values = [
-        "repo:cloudarmelpro/infra-terraform:environment:infra",
-        "repo:cloudarmelpro@*/infra-terraform@*:environment:infra",
+        "repo:cloudarmelpro/uaa-platform-infra:environment:infra",
+        "repo:cloudarmelpro@*/uaa-platform-infra@*:environment:infra",
       ]
     }
   }

@@ -1,5 +1,5 @@
 name: demarrer
-# Recrée tout l'environnement : réseau, cluster, ArgoCD, puis la plateforme depuis gitops-config (25 à 30 minutes).
+# Recrée tout l'environnement : réseau, cluster, ArgoCD, puis la plateforme depuis uaa-platform-gitops (25 à 30 minutes).
 on:
   workflow_dispatch:
 
