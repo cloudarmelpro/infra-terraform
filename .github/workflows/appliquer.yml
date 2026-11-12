@@ -1,0 +1,48 @@
+name: appliquer-infra
+# Applique l'infrastructure après chaque fusion dans main (socle, puis environnement s'il est allumé).
+# Le job attend l'approbation de l'environnement GitHub « infra » avant de recevoir les droits AWS.
+on:
+  push:
+    branches: [main]
+    paths: ["socle/**", "envs/dev/aws/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: terraform
+  cancel-in-progress: false
+
+jobs:
+  appliquer:
+    runs-on: ubuntu-latest
+    environment: infra
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_APPLY_ROLE_ARN }}
+          aws-region: eu-west-3
+          role-duration-seconds: 7200
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_wrapper: false
+
+      - name: Socle
+        working-directory: socle
+        run: |
+          terraform init -input=false
+          terraform apply -auto-approve -input=false
+
+      - name: Environnement (seulement s'il est allumé)
+        working-directory: envs/dev/aws
+        run: |
+          if aws eks describe-cluster --name gitops-dev >/dev/null 2>&1; then
+            terraform init -input=false
+            terraform apply -auto-approve -input=false
+          else
+            echo "Cluster éteint : rien à appliquer. Le workflow « demarrer » le créera avec ce code."
+          fi

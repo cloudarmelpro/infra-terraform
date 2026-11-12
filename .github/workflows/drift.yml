@@ -1,0 +1,58 @@
+name: detection-ecarts
+on:
+  schedule:
+    - cron: "0 6 * * *"        # chaque jour à 6 h UTC (9 h à Madagascar)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+  issues: write
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dossier: [socle, envs/dev/aws]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_READONLY_ROLE_ARN }}
+          aws-region: eu-west-3
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_wrapper: false
+
+      - name: L'environnement existe-t-il ?
+        id: env
+        run: |
+          if [ "${{ matrix.dossier }}" = "socle" ] || aws eks describe-cluster --name gitops-dev >/dev/null 2>&1; then
+            echo "actif=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "actif=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Plan
+        id: plan
+        if: steps.env.outputs.actif == 'true'
+        working-directory: ${{ matrix.dossier }}
+        run: |
+          terraform init -input=false
+          set +e
+          terraform plan -detailed-exitcode -lock=false -input=false -no-color > plan.txt
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Ouvrir un ticket en cas d'écart
+        if: steps.plan.outputs.code == '2'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create --title "Écart détecté (${{ matrix.dossier }}) le $(date +%F)" \
+            --body-file ${{ matrix.dossier }}/plan.txt --label derive
+
+      - name: Échec en cas d'erreur
+        if: steps.plan.outputs.code == '1'
+        run: exit 1
