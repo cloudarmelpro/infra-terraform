@@ -3,6 +3,7 @@ on: [pull_request]
 permissions:
   contents: read
   id-token: write
+  pull-requests: write   # publication du plan en commentaire
 jobs:
   checkov:
     runs-on: ubuntu-latest
@@ -34,6 +35,25 @@ jobs:
           terraform init -input=false
           terraform plan -lock=false -input=false -out=tfplan
           terraform show -json tfplan > plan.json
+          terraform show -no-color tfplan > plan.txt
+
+      - name: Plan en commentaire de la pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "### Plan Terraform : \`${{ matrix.dossier }}\`"
+            echo
+            echo "$(grep -E '^Plan:|^No changes' ${{ matrix.dossier }}/plan.txt || echo 'Voir le journal du job')"
+            echo
+            echo '<details><summary>Détail du plan</summary>'
+            echo
+            echo '```'
+            tail -c 60000 ${{ matrix.dossier }}/plan.txt
+            echo '```'
+            echo '</details>'
+          } > commentaire.md
+          gh pr comment ${{ github.event.pull_request.number }} --body-file commentaire.md
       - name: Conftest (dernière version)
         env:
           GH_TOKEN: ${{ github.token }}
