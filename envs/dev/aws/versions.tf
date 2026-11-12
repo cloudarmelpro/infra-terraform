@@ -27,7 +27,7 @@ variable "admin_ip" {
 locals {
   name   = "gitops-dev"
   azs    = ["us-east-1a", "us-east-1b", "us-east-1c"]
-  noeuds = 4 # nombre de nœuds souhaité (max_size = 5 dans eks.tf)
+  noeuds = 3 # nombre de nœuds souhaité (max_size = 4 dans eks.tf)
 }
 
 variable "admin_principal_arn" {

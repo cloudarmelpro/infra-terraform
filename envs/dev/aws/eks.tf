@@ -53,9 +53,9 @@ module "eks" {
 
   eks_managed_node_groups = {
     default = {
-      instance_types = ["t3.medium"]
+      instance_types = ["m7i-flex.large"] # 2 vCPU, 8 Go ; éligible au « Free plan » AWS (t3.medium ne l'est pas)
       min_size       = 2
-      max_size       = 5
+      max_size       = 4
       desired_size   = local.noeuds
     }
   }
@@ -67,7 +67,8 @@ resource "terraform_data" "taille_noeuds" {
   triggers_replace = [module.eks.eks_managed_node_groups["default"].node_group_id, local.noeuds]
 
   provisioner "local-exec" {
-    command = <<-EOT
+    interpreter = ["bash", "-c"] # même comportement sur le poste (Git Bash) et sur les runners Linux
+    command     = <<-EOT
       NG=$(echo "${module.eks.eks_managed_node_groups["default"].node_group_id}" | cut -d: -f2)
       ACTUEL=$(aws eks describe-nodegroup --cluster-name ${module.eks.cluster_name} --nodegroup-name "$NG" --region us-east-1 --query nodegroup.scalingConfig.desiredSize --output text)
       if [ "$ACTUEL" != "${local.noeuds}" ]; then
