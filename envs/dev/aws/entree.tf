@@ -1,10 +1,13 @@
-# Rôle d'AWS Load Balancer Controller, qui crée le NLB à partir du Service de Traefik.
-# L'adresse IP fixe du point d'entrée est gérée dans le socle (socle/entree.tf).
-removed {
-  from = aws_eip.entree
-  lifecycle { destroy = false }
+# Point d'entrée public des applications : une IP fixe par zone de disponibilité pour le NLB de Traefik.
+# Elles sont créées et détruites avec le cluster (aucun coût quand il est éteint) ; le nom DuckDNS
+# est mis à jour automatiquement à chaque démarrage (workflow « demarrer »).
+resource "aws_eip" "entree" {
+  for_each = toset(["a", "b", "c"])
+  domain   = "vpc"
+  tags     = { Name = "gitops-dev-entree-${each.key}" }
 }
 
+# Rôle d'AWS Load Balancer Controller, qui crée le NLB à partir du Service de Traefik
 module "lb_controller_pod_identity" {
   source  = "terraform-aws-modules/eks-pod-identity/aws"
   version = "~> 1.0"
@@ -20,3 +23,6 @@ module "lb_controller_pod_identity" {
     }
   }
 }
+
+output "entree_ip" { value = aws_eip.entree["a"].public_ip }
+output "entree_allocation_ids" { value = join(",", [for z in ["a", "b", "c"] : aws_eip.entree[z].allocation_id]) }

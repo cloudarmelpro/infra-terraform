@@ -11,6 +11,11 @@ concurrency:
   group: terraform
   cancel-in-progress: false
 
+env:
+  TF_VAR_admin_ip: ${{ secrets.ADMIN_IP }}
+  TF_VAR_admin_principal_arn: ${{ secrets.ADMIN_PRINCIPAL_ARN }}
+  TF_IN_AUTOMATION: "1"
+
 jobs:
   demarrer:
     runs-on: ubuntu-latest
@@ -36,13 +41,21 @@ jobs:
         working-directory: envs/dev/aws
         run: |
           terraform init -input=false
-          terraform apply -auto-approve -input=false -var "acces_ci_cidrs=$CIDR_CI"
+          terraform apply -auto-approve -input=false -no-color -var "acces_ci_cidrs=$CIDR_CI" > apply.log 2>&1 || { tail -n 30 apply.log; exit 1; }; grep -E "Apply complete|Destroy complete" apply.log
+
+      - name: DuckDNS pointe vers l'IP fixe du point d'entrée
+        working-directory: envs/dev/aws
+        env:
+          DUCKDNS_TOKEN: ${{ secrets.DUCKDNS_TOKEN }}
+        run: |
+          IP=$(terraform output -raw entree_ip)
+          curl -s "https://www.duckdns.org/update?domains=elyse-cloud&token=$DUCKDNS_TOKEN&ip=$IP"; echo " ($IP)"
 
       - name: ArgoCD, pont GitOps et application racine (sans métriques, Prometheus n'existe pas encore)
         working-directory: envs/dev/platform
         run: |
           terraform init -input=false
-          terraform apply -auto-approve -input=false -var activer_metriques=false
+          terraform apply -auto-approve -input=false -no-color -var activer_metriques=false > apply.log 2>&1 || { tail -n 30 apply.log; exit 1; }; grep -E "Apply complete|Destroy complete" apply.log
 
       - name: Métriques d'ArgoCD (si la supervision est activée dans Git)
         working-directory: envs/dev/platform
@@ -50,13 +63,13 @@ jobs:
           aws eks update-kubeconfig --name gitops-dev --region us-east-1
           if [ -f metriques.auto.tfvars ]; then
             timeout 1200 bash -c 'until kubectl get crd servicemonitors.monitoring.coreos.com >/dev/null 2>&1; do sleep 15; done'
-            terraform apply -auto-approve -input=false
+            terraform apply -auto-approve -input=false -no-color > apply.log 2>&1 || { tail -n 30 apply.log; exit 1; }; grep -E "Apply complete|Destroy complete" apply.log
           fi
 
       - name: Fermer l'accès temporaire du runner
         if: always()
         working-directory: envs/dev/aws
-        run: terraform apply -auto-approve -input=false
+        run: terraform apply -auto-approve -input=false -no-color > apply.log 2>&1 || { tail -n 30 apply.log; exit 1; }; grep -E "Apply complete|Destroy complete" apply.log
 
       - name: Bilan
         if: success()

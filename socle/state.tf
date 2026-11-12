@@ -1,6 +1,6 @@
 # Compartiment S3 qui conserve l'état de toutes les piles Terraform
 resource "aws_s3_bucket" "tfstate" {
-  bucket = "tfstate-elyse-gitops"
+  bucket = "tfstate-didacloudops-gitops"
 }
 
 resource "aws_s3_bucket_versioning" "tfstate" {

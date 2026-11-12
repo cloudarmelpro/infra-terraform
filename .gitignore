@@ -4,3 +4,9 @@
 tfplan
 plan.json
 plan.txt
+
+# Valeurs personnelles (IP, identité) : jamais dans un dépôt public. Fournies par les variables GitHub ADMIN_IP / ADMIN_PRINCIPAL_ARN.
+envs/dev/aws/admin.auto.tfvars
+*.plan
+apply.log
+.terraform.lock.hcl

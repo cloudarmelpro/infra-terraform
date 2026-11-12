@@ -4,7 +4,7 @@ terraform {
     aws = { source = "hashicorp/aws", version = "~> 5.0" }
   }
   backend "s3" {
-    bucket       = "tfstate-elyse-gitops"
+    bucket       = "tfstate-didacloudops-gitops"
     key          = "dev/aws/terraform.tfstate"
     region       = "us-east-1"
     encrypt      = true
@@ -25,8 +25,8 @@ variable "admin_ip" {
 }
 
 locals {
-  name = "gitops-dev"
-  azs  = ["us-east-1a", "us-east-1b", "us-east-1c"]
+  name   = "gitops-dev"
+  azs    = ["us-east-1a", "us-east-1b", "us-east-1c"]
   noeuds = 4 # nombre de nœuds souhaité (max_size = 5 dans eks.tf)
 }
 
