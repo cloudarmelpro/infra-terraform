@@ -25,9 +25,10 @@ variable "admin_ip" {
 }
 
 locals {
-  name   = "gitops-dev"
-  azs    = ["us-east-1a", "us-east-1b", "us-east-1c"]
-  noeuds = 3 # nombre de nœuds souhaité (max_size = 4 dans eks.tf)
+  name = "gitops-dev"
+  azs  = ["us-east-1a", "us-east-1b", "us-east-1c"]
+  # Nœuds du groupe principal : en mode « noeud », un des trois nœuds devient le nœud d'entrée (même coût)
+  noeuds = var.mode_entree == "noeud" ? 2 : 3
 }
 
 variable "admin_principal_arn" {
@@ -42,3 +43,13 @@ variable "acces_ci_cidrs" {
 }
 
 data "aws_caller_identity" "courant" {}
+
+variable "mode_entree" {
+  description = "Point d'entrée public : « nlb » (Network Load Balancer, cible) ou « noeud » (nœud public + Traefik sur 80/443, quand le compte n'autorise pas encore ELB)"
+  type        = string
+  default     = "noeud"
+  validation {
+    condition     = contains(["nlb", "noeud"], var.mode_entree)
+    error_message = "mode_entree vaut « nlb » ou « noeud »."
+  }
+}

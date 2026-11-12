@@ -136,6 +136,8 @@ resource "kubernetes_secret" "cluster" {
       entree_subnets         = join(",", data.terraform_remote_state.aws.outputs.public_subnets)
       entree_eip_allocations = data.terraform_remote_state.aws.outputs.entree_allocation_ids
       registre_ecr           = local.registre_ecr
+      entree_mode            = try(data.terraform_remote_state.aws.outputs.mode_entree, "nlb")
+      entree_ip              = data.terraform_remote_state.aws.outputs.entree_ip
     }
   }
   data = {

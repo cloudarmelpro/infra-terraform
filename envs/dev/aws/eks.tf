@@ -51,14 +51,29 @@ module "eks" {
     }
   }
 
-  eks_managed_node_groups = {
-    default = {
-      instance_types = ["m7i-flex.large"] # 2 vCPU, 8 Go ; éligible au « Free plan » AWS (t3.medium ne l'est pas)
-      min_size       = 2
-      max_size       = 4
-      desired_size   = local.noeuds
-    }
-  }
+  eks_managed_node_groups = merge(
+    {
+      default = {
+        instance_types = ["m7i-flex.large"] # 2 vCPU, 8 Go ; éligible au « Free plan » AWS (t3.medium ne l'est pas)
+        min_size       = 2
+        max_size       = 4
+        desired_size   = local.noeuds
+      }
+    },
+    # Nœud d'entrée (mode « noeud ») : sous-réseau public de la zone a, IP fixe, réservé à Traefik (marque « role=entree »)
+    { for nom, ng in {
+      entree = {
+        instance_types         = ["m7i-flex.large"]
+        subnet_ids             = [module.vpc.public_subnets[0]]
+        min_size               = 1
+        max_size               = 1
+        desired_size           = 1
+        labels                 = { role = "entree" }
+        taints                 = { entree = { key = "role", value = "entree", effect = "NO_SCHEDULE" } }
+        vpc_security_group_ids = [aws_security_group.entree.id]
+      }
+    } : nom => ng if var.mode_entree == "noeud" }
+  )
 }
 
 # Le module ignore desired_size après la création (pour ne pas contrarier une mise à l'échelle automatique).
