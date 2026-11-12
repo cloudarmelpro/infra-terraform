@@ -42,9 +42,27 @@ module "eks" {
   cluster_enabled_log_types = ["api", "audit", "authenticator"]
 
   cluster_addons = {
-    coredns                = {}
-    kube-proxy             = {}
-    eks-pod-identity-agent = {}
+    coredns    = {}
+    kube-proxy = {}
+    # L'agent réserve le port 80 de chaque nœud : il est exclu du nœud d'entrée, où Traefik occupe 80/443
+    eks-pod-identity-agent = {
+      configuration_values = jsonencode({
+        affinity = {
+          nodeAffinity = {
+            requiredDuringSchedulingIgnoredDuringExecution = {
+              nodeSelectorTerms = [{
+                matchExpressions = [
+                  { key = "kubernetes.io/os", operator = "In", values = ["linux"] },
+                  { key = "kubernetes.io/arch", operator = "In", values = ["amd64", "arm64"] },
+                  { key = "eks.amazonaws.com/compute-type", operator = "NotIn", values = ["fargate", "hybrid", "auto"] },
+                  { key = "role", operator = "NotIn", values = ["entree"] },
+                ]
+              }]
+            }
+          }
+        }
+      })
+    }
     vpc-cni = {
       before_compute       = true
       configuration_values = jsonencode({ enableNetworkPolicy = "true" })
