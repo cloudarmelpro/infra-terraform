@@ -12,6 +12,11 @@ concurrency:
   group: terraform
   cancel-in-progress: false
 
+env:
+  TF_VAR_admin_ip: ${{ secrets.ADMIN_IP }}
+  TF_VAR_admin_principal_arn: ${{ secrets.ADMIN_PRINCIPAL_ARN }}
+  TF_IN_AUTOMATION: "1"
+
 jobs:
   arreter:
     runs-on: ubuntu-latest
@@ -39,7 +44,7 @@ jobs:
         working-directory: envs/dev/aws
         run: |
           terraform init -input=false
-          terraform apply -auto-approve -input=false -var "acces_ci_cidrs=$CIDR_CI"
+          terraform apply -auto-approve -input=false -no-color -var "acces_ci_cidrs=$CIDR_CI" > apply.log 2>&1 || { tail -n 30 apply.log; exit 1; }; grep -E "Apply complete|Destroy complete" apply.log
 
       - name: Supprimer le NLB (ArgoCD arrêté pour qu'il ne le recrée pas)
         if: steps.env.outputs.actif == 'true'
@@ -57,9 +62,9 @@ jobs:
         working-directory: envs/dev/platform
         run: |
           terraform init -input=false
-          terraform destroy -auto-approve -input=false
+          terraform destroy -auto-approve -input=false -no-color > apply.log 2>&1 || { tail -n 30 apply.log; exit 1; }; grep -E "Apply complete|Destroy complete" apply.log
 
       - name: Réseau et cluster
         if: steps.env.outputs.actif == 'true'
         working-directory: envs/dev/aws
-        run: terraform destroy -auto-approve -input=false -var "acces_ci_cidrs=$CIDR_CI"
+        run: terraform destroy -auto-approve -input=false -no-color -var "acces_ci_cidrs=$CIDR_CI" > apply.log 2>&1 || { tail -n 30 apply.log; exit 1; }; grep -E "Apply complete|Destroy complete" apply.log

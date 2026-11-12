@@ -4,6 +4,11 @@ permissions:
   contents: read
   id-token: write
   pull-requests: write   # publication du plan en commentaire
+env:
+  TF_VAR_admin_ip: ${{ secrets.ADMIN_IP }}
+  TF_VAR_admin_principal_arn: ${{ secrets.ADMIN_PRINCIPAL_ARN }}
+  TF_IN_AUTOMATION: "1"
+
 jobs:
   checkov:
     runs-on: ubuntu-latest
@@ -33,7 +38,7 @@ jobs:
         working-directory: ${{ matrix.dossier }}
         run: |
           terraform init -input=false
-          terraform plan -lock=false -input=false -out=tfplan
+          terraform plan -lock=false -input=false -no-color -out=tfplan > /dev/null
           terraform show -json tfplan > plan.json
           terraform show -no-color tfplan > plan.txt
 
@@ -46,12 +51,9 @@ jobs:
             echo
             echo "$(grep -E '^Plan:|^No changes' ${{ matrix.dossier }}/plan.txt || echo 'Voir le journal du job')"
             echo
-            echo '<details><summary>Détail du plan</summary>'
+            echo 'Ressources concernées (le détail reste privé : dépôt public) :'
             echo
-            echo '```'
-            tail -c 60000 ${{ matrix.dossier }}/plan.txt
-            echo '```'
-            echo '</details>'
+            grep -E '^  # ' ${{ matrix.dossier }}/plan.txt | sed 's/^  # /- /' | head -50
           } > commentaire.md
           gh pr comment ${{ github.event.pull_request.number }} --body-file commentaire.md
       - name: Conftest (dernière version)

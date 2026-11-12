@@ -6,7 +6,7 @@ terraform {
     kubernetes = { source = "hashicorp/kubernetes", version = "~> 2.35" }
   }
   backend "s3" {
-    bucket       = "tfstate-elyse-gitops"
+    bucket       = "tfstate-didacloudops-gitops"
     key          = "dev/platform/terraform.tfstate"
     region       = "us-east-1"
     encrypt      = true
@@ -104,12 +104,12 @@ variable "composants" {
 
 data "terraform_remote_state" "socle" {
   backend = "s3"
-  config  = { bucket = "tfstate-elyse-gitops", key = "socle/terraform.tfstate", region = "us-east-1" }
+  config  = { bucket = "tfstate-didacloudops-gitops", key = "socle/terraform.tfstate", region = "us-east-1" }
 }
 
 data "terraform_remote_state" "aws" {
   backend = "s3"
-  config  = { bucket = "tfstate-elyse-gitops", key = "dev/aws/terraform.tfstate", region = "us-east-1" }
+  config  = { bucket = "tfstate-didacloudops-gitops", key = "dev/aws/terraform.tfstate", region = "us-east-1" }
 }
 
 data "aws_caller_identity" "courant" {}
@@ -134,7 +134,7 @@ resource "kubernetes_secret" "cluster" {
       cluster_name           = data.aws_eks_cluster.this.name
       aws_vpc_id             = data.terraform_remote_state.aws.outputs.vpc_id
       entree_subnets         = join(",", data.terraform_remote_state.aws.outputs.public_subnets)
-      entree_eip_allocations = data.terraform_remote_state.socle.outputs.entree_allocation_ids
+      entree_eip_allocations = data.terraform_remote_state.aws.outputs.entree_allocation_ids
       registre_ecr           = local.registre_ecr
     }
   }

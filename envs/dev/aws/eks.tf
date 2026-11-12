@@ -12,7 +12,7 @@ module "eks" {
   cluster_endpoint_public_access_cidrs = concat(["${var.admin_ip}/32"], var.acces_ci_cidrs)
   cluster_endpoint_private_access      = true
 
-  authentication_mode                      = "API"
+  authentication_mode = "API"
   # Accès administrateur explicite : avec « cluster creator », le plan lancé par la CI
   # (rôle en lecture seule) voyait un faux écart sur l'entrée d'accès.
   enable_cluster_creator_admin_permissions = false
@@ -78,5 +78,5 @@ resource "terraform_data" "taille_noeuds" {
 }
 
 output "cluster_name" { value = module.eks.cluster_name }
-output "vpc_id"         { value = module.vpc.vpc_id }
+output "vpc_id" { value = module.vpc.vpc_id }
 output "public_subnets" { value = module.vpc.public_subnets }

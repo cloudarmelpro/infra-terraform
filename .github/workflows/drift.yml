@@ -9,6 +9,11 @@ permissions:
   id-token: write
   issues: write
 
+env:
+  TF_VAR_admin_ip: ${{ secrets.ADMIN_IP }}
+  TF_VAR_admin_principal_arn: ${{ secrets.ADMIN_PRINCIPAL_ARN }}
+  TF_IN_AUTOMATION: "1"
+
 jobs:
   plan:
     runs-on: ubuntu-latest
