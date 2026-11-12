@@ -18,10 +18,6 @@ jobs:
     timeout-minutes: 75
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: cloudarmelpro/gitops-config
-          path: gitops-config
       - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           role-to-assume: ${{ vars.AWS_APPLY_ROLE_ARN }}
@@ -42,20 +38,16 @@ jobs:
           terraform init -input=false
           terraform apply -auto-approve -input=false -var "acces_ci_cidrs=$CIDR_CI"
 
-      - name: ArgoCD (sans métriques, Prometheus n'existe pas encore)
+      - name: ArgoCD, pont GitOps et application racine (sans métriques, Prometheus n'existe pas encore)
         working-directory: envs/dev/platform
         run: |
           terraform init -input=false
           terraform apply -auto-approve -input=false -var activer_metriques=false
 
-      - name: Application racine
-        run: |
-          aws eks update-kubeconfig --name gitops-dev --region us-east-1
-          kubectl apply -f gitops-config/bootstrap/root.yaml
-
       - name: Métriques d'ArgoCD (si la supervision est activée dans Git)
         working-directory: envs/dev/platform
         run: |
+          aws eks update-kubeconfig --name gitops-dev --region us-east-1
           if [ -f metriques.auto.tfvars ]; then
             timeout 1200 bash -c 'until kubectl get crd servicemonitors.monitoring.coreos.com >/dev/null 2>&1; do sleep 15; done'
             terraform apply -auto-approve -input=false
