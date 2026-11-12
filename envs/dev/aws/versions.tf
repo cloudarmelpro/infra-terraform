@@ -6,14 +6,14 @@ terraform {
   backend "s3" {
     bucket       = "tfstate-elyse-gitops"
     key          = "dev/aws/terraform.tfstate"
-    region       = "eu-west-3"
+    region       = "us-east-1"
     encrypt      = true
     use_lockfile = true
   }
 }
 
 provider "aws" {
-  region = "eu-west-3"
+  region = "us-east-1"
   default_tags {
     tags = { Project = "gitops-eks", Environment = "dev", ManagedBy = "terraform" }
   }
@@ -26,7 +26,7 @@ variable "admin_ip" {
 
 locals {
   name = "gitops-dev"
-  azs  = ["eu-west-3a", "eu-west-3b", "eu-west-3c"]
+  azs  = ["us-east-1a", "us-east-1b", "us-east-1c"]
   noeuds = 4 # nombre de nœuds souhaité (max_size = 5 dans eks.tf)
 }
 
