@@ -47,7 +47,8 @@ provider "kubernetes" {
 }
 
 locals {
-  metriques = { enabled = var.activer_metriques, serviceMonitor = { enabled = var.activer_metriques } }
+  domaine_argocd = "argocd.elyse-cloud.duckdns.org"
+  metriques      = { enabled = var.activer_metriques, serviceMonitor = { enabled = var.activer_metriques } }
 }
 
 resource "helm_release" "argocd" {
@@ -59,10 +60,21 @@ resource "helm_release" "argocd" {
   create_namespace = true
 
   values = [yamlencode({
+    global     = { domain = local.domaine_argocd }
     controller = { metrics = local.metriques }
-    server     = { metrics = local.metriques }
+    # Interface publiée en HTTPS par Traefik (certificat Let's Encrypt) ; le TLS se termine dans Traefik
+    server = {
+      metrics = local.metriques
+      ingress = {
+        enabled          = true
+        ingressClassName = "traefik"
+        annotations      = { "cert-manager.io/cluster-issuer" = "letsencrypt" }
+        tls              = true
+      }
+    }
     configs = {
-      rbac = { "policy.default" = "role:readonly" }
+      params = { "server.insecure" = true }
+      rbac   = { "policy.default" = "role:readonly" }
       cm = {
         # Les vagues de synchronisation attendent qu'une Application soit prête
         "resource.customizations.health.argoproj.io_Application" = <<-EOT
