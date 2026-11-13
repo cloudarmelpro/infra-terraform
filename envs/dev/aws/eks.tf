@@ -1,3 +1,17 @@
+# Adresses autorisées sur l'API Kubernetes : le poste administrateur (admin_ip), les postes de l'équipe
+# (paramètres SSM /uaa/acces-api/<poste>, tenus à jour par outils/acces-poste/suivi-ip.sh) et le runner CI.
+data "aws_ssm_parameters_by_path" "acces_api" {
+  path = "/uaa/acces-api/"
+}
+
+locals {
+  acces_api = distinct(concat(
+    ["${var.admin_ip}/32"],
+    [for ip in nonsensitive(data.aws_ssm_parameters_by_path.acces_api.values) : "${ip}/32"], # adresses IP, non secrètes
+    var.acces_ci_cidrs
+  ))
+}
+
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 20.0"
@@ -9,7 +23,7 @@ module "eks" {
   subnet_ids = module.vpc.private_subnets
 
   cluster_endpoint_public_access       = true
-  cluster_endpoint_public_access_cidrs = concat(["${var.admin_ip}/32"], var.acces_ci_cidrs)
+  cluster_endpoint_public_access_cidrs = local.acces_api
   cluster_endpoint_private_access      = true
 
   authentication_mode = "API"
