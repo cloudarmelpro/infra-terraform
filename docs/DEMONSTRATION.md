@@ -10,6 +10,7 @@ Toutes les commandes se lancent **depuis le poste Ubuntu** (`kubectl` déjà con
 |---|---|
 | https://argocd.elyse-cloud.duckdns.org | ArgoCD (état GitOps du cluster) |
 | https://grafana.elyse-cloud.duckdns.org | Grafana (supervision, tableau de bord Conformité) |
+| https://prometheus.elyse-cloud.duckdns.org | Prometheus (métriques brutes, protégé par mot de passe) |
 | https://dev.elyse-cloud.duckdns.org/api/ | API du portail, environnement dev |
 | https://staging.elyse-cloud.duckdns.org/api/ | API du portail, environnement staging |
 | https://prod.elyse-cloud.duckdns.org/api/ | API du portail, environnement prod |
@@ -51,7 +52,15 @@ Ouvrir à l'avance, dans le navigateur :
 - un onglet **ArgoCD** (connecté avec le compte `admin`) ;
 - un onglet **GitHub** sur `uaa-portal-api` → *Actions* ;
 - un onglet **API prod** : https://prod.elyse-cloud.duckdns.org/api/ ;
-- un onglet **Grafana** : https://grafana.elyse-cloud.duckdns.org (connecté avec le compte `admin`).
+- un onglet **Grafana** : https://grafana.elyse-cloud.duckdns.org (connecté avec le compte `admin`) ;
+- un onglet **Prometheus** : https://prometheus.elyse-cloud.duckdns.org (identifiant `admin`, mot de passe ci-dessous).
+
+Mots de passe à récupérer avant de commencer (ne pas les afficher devant le jury) :
+
+```bash
+kubectl -n monitoring get secret supervision-grafana -o jsonpath='{.data.admin-password}' | base64 -d; echo   # Grafana
+kubectl -n monitoring get secret prometheus-acces -o jsonpath='{.data.password}' | base64 -d; echo          # Prometheus
+```
 
 Préparer **deux terminaux** : un pour les commandes, un pour les `watch`.
 
@@ -342,8 +351,19 @@ Montrer le tableau de bord **Conformité** (violations des politiques, état des
 puis *Explore* → source **Prometheus** pour une requête en direct, par exemple :
 `sum by (namespace) (kube_pod_status_phase{phase="Running"})`.
 
-> **À dire :** « Prometheus n'a pas d'authentification : il reste interne au cluster, et on
-> l'interroge à travers Grafana, qui, lui, est protégé. »
+Puis ouvrir **Prometheus** : https://prometheus.elyse-cloud.duckdns.org → *Status* → *Targets*
+(toutes les cibles surveillées doivent être `UP`), et lancer la requête `up` dans l'onglet *Query*.
+
+Montrer que l'accès est protégé :
+
+```bash
+curl -s -o /dev/null -w "%{http_code}
+" https://prometheus.elyse-cloud.duckdns.org/   # 401 : identifiant exigé
+```
+
+> **À dire :** « Prometheus n'a pas d'authentification propre. Traefik exige donc un identifiant
+> avant de laisser passer la requête, et le mot de passe est généré dans le cluster par External
+> Secrets : il n'a jamais été écrit dans Git. »
 
 ---
 
