@@ -9,6 +9,7 @@ Toutes les commandes se lancent **depuis le poste Ubuntu** (`kubectl` déjà con
 | Adresse | Rôle |
 |---|---|
 | https://argocd.elyse-cloud.duckdns.org | ArgoCD (état GitOps du cluster) |
+| https://grafana.elyse-cloud.duckdns.org | Grafana (supervision, tableau de bord Conformité) |
 | https://dev.elyse-cloud.duckdns.org/api/ | API du portail, environnement dev |
 | https://staging.elyse-cloud.duckdns.org/api/ | API du portail, environnement staging |
 | https://prod.elyse-cloud.duckdns.org/api/ | API du portail, environnement prod |
@@ -50,9 +51,9 @@ Ouvrir à l'avance, dans le navigateur :
 - un onglet **ArgoCD** (connecté avec le compte `admin`) ;
 - un onglet **GitHub** sur `uaa-portal-api` → *Actions* ;
 - un onglet **API prod** : https://prod.elyse-cloud.duckdns.org/api/ ;
-- un onglet **Grafana** (voir partie 9, le tunnel est à ouvrir dans un terminal à part).
+- un onglet **Grafana** : https://grafana.elyse-cloud.duckdns.org (connecté avec le compte `admin`).
 
-Préparer **trois terminaux** : un pour les commandes, un pour les `watch`, un pour le tunnel Grafana.
+Préparer **deux terminaux** : un pour les commandes, un pour les `watch`.
 
 ---
 
@@ -331,20 +332,18 @@ grep -r "password\|secret" ~/Bureau/master/uaa-platform-gitops/apps/portal-api/ 
 
 ### Supervision
 
-Dans le terminal 3 :
-
-```bash
-kubectl -n monitoring port-forward svc/supervision-grafana 3000:80
-```
-
-Mot de passe (utilisateur `admin`) :
+Ouvrir https://grafana.elyse-cloud.duckdns.org (utilisateur `admin`). Mot de passe :
 
 ```bash
 kubectl -n monitoring get secret supervision-grafana -o jsonpath='{.data.admin-password}' | base64 -d; echo
 ```
 
-Ouvrir http://localhost:3000 → tableau de bord **Conformité** : violations des politiques,
-état des applications ArgoCD.
+Montrer le tableau de bord **Conformité** (violations des politiques, état des applications ArgoCD),
+puis *Explore* → source **Prometheus** pour une requête en direct, par exemple :
+`sum by (namespace) (kube_pod_status_phase{phase="Running"})`.
+
+> **À dire :** « Prometheus n'a pas d'authentification : il reste interne au cluster, et on
+> l'interroge à travers Grafana, qui, lui, est protégé. »
 
 ---
 
