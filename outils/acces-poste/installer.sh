@@ -21,8 +21,10 @@ echo "== Suivi automatique de l'IP du poste (cron, toutes les 5 minutes)"
 mkdir -p ~/.uaa
 install -m 0755 "$DOSSIER/suivi-ip.sh" ~/.uaa/suivi-ip.sh
 LIGNE="*/5 * * * * UAA_PROFIL=$PROFIL $HOME/.uaa/suivi-ip.sh"
-( crontab -l 2>/dev/null | grep -v '.uaa/suivi-ip.sh'; echo "$LIGNE" ) | crontab -
-UAA_PROFIL=$PROFIL ~/.uaa/suivi-ip.sh
+# (sans crontab existante, « crontab -l » et « grep -v » échouent : on l'ignore)
+{ crontab -l 2>/dev/null | grep -v '.uaa/suivi-ip.sh' || true; echo "$LIGNE"; } | crontab -
+echo "Tâche cron installée."
+UAA_PROFIL=$PROFIL ~/.uaa/suivi-ip.sh || true
 
 echo "== Configuration de kubectl"
 aws eks update-kubeconfig --name gitops-dev --region us-east-1 --profile $PROFIL --alias gitops-dev
